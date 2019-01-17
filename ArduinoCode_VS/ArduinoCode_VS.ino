@@ -1,8 +1,13 @@
-/*
+/***************************************************
  Name:	通电玻璃门交互	ArduinoCode_VS.ino
  Created:	2019/1/17/周四 17:20:40
  Author:	liuguo
-*/
+****************************************************/
+/***************************************************
+CurrentVersion:V1.0   Time:	2019/1/17/周四 17:20:40
+Content:http,udp
+    
+****************************************************/
 
 /*NOTE:如何防止WDT复位
 The ESP8266 is a little different than the standard Arduino boards in that it has the watchdog(WDT) turned on by default.
@@ -47,7 +52,7 @@ static struct pt_sem sem_LED;
 /***************其他设置*********************/
 boolean sensor_close;
 boolean sensor_handle;
-String infoStr;
+
 const int remotePort = 17942;
 bool isInitialized = false; //初始化
 /*******************************************/
@@ -61,13 +66,17 @@ void setup() {
 	DEBUG_SERIAL.println("Start all initilization.....");
 
 	InitializeWeb();//初始化网络通信参数
-
+	InitializeIO();
 	PT_INIT(&checkSensorThread);//初始化模拟多线程
 	PT_INIT(&receiveNTPThread);//初始化模拟多线程
 	isInitialized = true;
-
 }
 
+void InitializeIO()
+{
+	pinMode(CLOSE_GLASS_INPUT_PORT, INPUT_PULLUP);
+	pinMode(D00R_HANDLE_INPUT_PORT, INPUT);
+}
 
 static int receiveNTPThread_entry(struct pt *pt)
 {
@@ -109,18 +118,20 @@ void CheckSensorState()
 		D00R_HANDLE_INPUT_PORT_COUNT = 0;
 
 	if (D00R_HANDLE_INPUT_PORT_COUNT > MAX_LOW_COUNT)
-		sensor_handle = false;
-	else
 		sensor_handle = true;
+	else
+		sensor_handle = false;
 
 	if (sensor_close == false)
 		CLOSE_GLASS_INPUT_PORT_COUNT++;
 	else
 		CLOSE_GLASS_INPUT_PORT_COUNT = 0;
-	if (CLOSE_GLASS_INPUT_PORT > MAX_LOW_COUNT)
+
+	if (CLOSE_GLASS_INPUT_PORT_COUNT > MAX_LOW_COUNT)
 		sensor_close = false;
 	else
 		sensor_close = true;
+
 	String  close = sensor_close ? "1" : "0";
 	String  handle = sensor_handle ? "1" : "0";
 	msg = "close:" + close + "," + "door:" + handle;
@@ -132,7 +143,7 @@ void CheckSensorState()
 void InitializeWeb() {
 	DEBUG_SERIAL.println();
 	StartAP("xr-lab","66666666","192.168.1.1");
-	InitializeUDP(8000);
+	BeginUDP(8000);
 }
 
 

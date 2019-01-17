@@ -1,31 +1,23 @@
-
-
-
-/******************************************************************************************
-*******************************�������ò���������Ҫ�޸ģ�**********************************
-*******************************************************************************************/
-
-
+/***************************************************
+Name:	����8266��ͨ�Ź��߰�	NetworkUtilities.ino
+Created:	2019/1/17/���� 17:20:40
+Author:	liuguo
+****************************************************/
 
 WiFiUDP udp;
-ESP8266WebServer server(80);//�������ط�����
+ESP8266WebServer server(80);
 ESP8266WiFiMulti WiFiMulti;
 
-//bool ssid_sta_setted = false;
+
 bool wifiConnected = false;
 
-const int LIGHT_PORT = 16; //pin0 ָʾ��:����ָʾ���統ǰ����״̬
+const int LIGHT_PORT = 16;
+int connectTimeout = 15000;
 
-int connectTimeout = 15000; //���ӳ�ʱ����
-
- /******************************�������ò�������*************************************************************/
-
-
-unsigned long SendAdvUdpMsg(String msg ,int remotePort)
+unsigned long SendAdvUdpMsg(String msg, int remotePort)
 {
-	IPAddress ad_ip(255, 255, 255, 255); //�㲥��ַ
-	//int ad_port = 17924; //�㲥�˿�
-    int size = msg.length();
+	IPAddress ad_ip(255, 255, 255, 255);
+	int size = msg.length();
 	char _data[size + 1];
 	msg.toCharArray(_data, size + 1);
 	udp.beginPacket(ad_ip, remotePort);
@@ -34,7 +26,7 @@ unsigned long SendAdvUdpMsg(String msg ,int remotePort)
 }
 
 
-void StartAP(String ssid, String psd,String ip) {
+void StartAP(String ssid, String psd, String ip) {
 	pinMode(LIGHT_PORT, OUTPUT);
 	digitalWrite(LIGHT_PORT, LOW);
 	char _apssid[ssid.length() + 1];
@@ -44,11 +36,13 @@ void StartAP(String ssid, String psd,String ip) {
 
 	Serial.println("Start create AP ,ssid:" + String(_apssid) + "......");
 	IPAddress ap_subnet(255, 255, 255, 0);
+
 	WiFi.softAPConfig(CovertIpStrToIPAddress(ip), CovertIpStrToIPAddress(ip), ap_subnet);
 	delay(1000);
 	WiFi.softAP(_apssid, _appassword);
+	delay(2000);
 	IPAddress myIP = WiFi.softAPIP();
-	Serial.print("Create successfullly,IP address: ");
+	Serial.print("Create AP successfullly,IP address: ");
 	Serial.println(myIP);
 	digitalWrite(LIGHT_PORT, HIGH);
 }
@@ -59,7 +53,7 @@ void InitializeWebServer(int port = 80) {
 void BeginWebServer() {
 	server.begin();
 }
-void SetConnectTimeout(int timeout )
+void SetConnectTimeout(int timeout)
 {
 	connectTimeout = timeout;
 }
@@ -113,7 +107,7 @@ IPAddress CovertIpStrToIPAddress(String ip)
 }
 
 
-void InitializeUDP(int localport)
+void BeginUDP(int localport)
 {
 	udp.begin(localport);
 }
@@ -127,7 +121,7 @@ void  SendUDPString(String ip, int remotePort, String data)
 	udp.endPacket();
 }
 
-void  SendUDPBytes(String ip,int remotePort, char* data, int _length)
+void  SendUDPBytes(String ip, int remotePort, char* data, int _length)
 {
 	udp.beginPacket(CovertIpStrToIPAddress(ip), remotePort);
 	udp.write(data, _length);
@@ -159,11 +153,11 @@ void lightTwinkle()
 
 }
 
-bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOctet)
+bool TryConnectWiFi(String ssid, String psd, String _thirdOctet, String _fourthOctet)
 {
 	Serial.println();
 
-	char _ssid[ssid.length() + 1]; //ע��charҪ��String ��һλ ���У������������
+	char _ssid[ssid.length() + 1]; //leave one to terminal
 	char _psd[psd.length() + 1];
 
 	ssid.toCharArray(_ssid, ssid.length() + 1);
@@ -183,7 +177,7 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 
 	delay(1000);
 
-	Serial.println("��������Ŀ��WiFi  " + String(_ssid) + "...");
+	Serial.println("Try to connect Wifi:  " + String(_ssid) + "...");
 	int count = 0;
 	while (WiFiMulti.run() != WL_CONNECTED)
 	{
@@ -191,10 +185,10 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 
 		Serial.print(".");
 		count++;
-		if (count * 500 == connectTimeout) //����Timeout��Ϊû�����ϣ��򷵻�����ʧ��
+		if (count * 500 == connectTimeout)
 		{
 			Serial.println();
-			Serial.println("����" + String(_ssid) + "ʧ�ܣ���ȷ��Ŀ��WiFi�ɹ�������");
+			Serial.println("Connect " + String(_ssid) + "failed,please make sure target wifi being opened!");
 			return false;
 		}
 	}
@@ -202,14 +196,14 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 	{
 		WiFi.disconnect();
 		Serial.println();
-		Serial.println("����" + String(ssid) + "ʧ�ܣ���ȷ��Ŀ��WiFi�ɹ�������");
+		Serial.println("Connect " + String(ssid) + "failed,please make sure target wifi being opened!");
 		return false;
 	}
 
 	digitalWrite(LIGHT_PORT, HIGH);
 
 	Serial.println();
-	Serial.println("�ɹ�����Ŀ��WiFi:" + WiFi.SSID());
+	Serial.println("Sucessfully Connect Target Wifi :" + WiFi.SSID());
 	Serial.print("Local IP:");
 
 	Serial.println(WiFi.localIP());
