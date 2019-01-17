@@ -17,6 +17,7 @@
   <ItemGroup>
     <None Include="ArduinoCode_VS.ino" />
     <None Include="NetworkUtilities.ino" />
+    <None Include="FileUtilities.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.ArduinoCode_VS.vsarduino.h">

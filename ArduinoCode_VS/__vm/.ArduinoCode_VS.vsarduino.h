@@ -106,6 +106,7 @@ typedef long __PTRDIFF_TYPE__;
 #define noInterrupts() cli()
 
 #include "ArduinoCode_VS.ino"
+#include "FileUtilities.ino"
 #include "NetworkUtilities.ino"
 #endif
 #endif
