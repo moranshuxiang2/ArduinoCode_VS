@@ -1,9 +1,5 @@
-﻿
-/*************************************************
-项目名；通电玻璃门交互
-*************************************************/
 /*
- Name:		ArduinoCode_VS.ino
+ Name:	通电玻璃门交互	ArduinoCode_VS.ino
  Created:	2019/1/17/周四 17:20:40
  Author:	liuguo
 */
@@ -24,6 +20,7 @@ This is the mos simple solution but in general it's not a good idea to write blo
 so you might consider reworking your code so that loop() continues to run unimpeded.
 */
 
+#include "Myheader.h"
 #define DEBUG_SERIAL Serial
 
 /************IO端口设置***********/
@@ -43,7 +40,7 @@ int MAX_LOW_COUNT = 2;
 #define PT_USE_SEM
 #define PT_USE_TIMER
 #include "pt.h"
-static struct pt sendNTPThread, checkSensorThread;
+static struct pt  checkSensorThread, receiveNTPThread;
 static struct pt_sem sem_LED;
 /*************************************************/
 
@@ -51,6 +48,7 @@ static struct pt_sem sem_LED;
 boolean sensor_close;
 boolean sensor_handle;
 String infoStr;
+const int remotePort = 17942;
 bool isInitialized = false; //初始化
 /*******************************************/
 
@@ -58,23 +56,28 @@ bool isInitialized = false; //初始化
 
 
 void setup() {
+
 	DEBUG_SERIAL.begin(115200);
 	DEBUG_SERIAL.println("Start all initilization.....");
 
 	InitializeWeb();//初始化网络通信参数
 
-	PT_INIT(&sendNTPThread);//初始化模拟多线程
 	PT_INIT(&checkSensorThread);//初始化模拟多线程
+	PT_INIT(&receiveNTPThread);//初始化模拟多线程
+	isInitialized = true;
 
 }
+
 
 static int receiveNTPThread_entry(struct pt *pt)
 {
 	String receivedStr;
 	PT_BEGIN(pt);
 	while (1) {
-		receivedStr = ReadNTPpacket();
-		//HandleCmd(receivedStr);
+		receivedStr = ReadUDPMsg();
+		if (receivedStr != "")
+			DEBUG_SERIAL.println("Received UDP resopnse msg:" + receivedStr);
+
 		PT_TIMER_DELAY(pt, 50);//间隔50毫秒执行一次
 		PT_YIELD(pt);//跳到下一帧继续执行,让出cpu给其他任务
 	}
@@ -121,26 +124,19 @@ void CheckSensorState()
 	String  close = sensor_close ? "1" : "0";
 	String  handle = sensor_handle ? "1" : "0";
 	msg = "close:" + close + "," + "door:" + handle;
-	SendAdvUdpMsg(msg,17942);
+	SendAdvUdpMsg(msg, remotePort);
 	DEBUG_SERIAL.println(msg);
-	infoStr = msg;
 }
 
 
 void InitializeWeb() {
 	DEBUG_SERIAL.println();
-
-
+	StartAP("xr-lab","66666666","192.168.1.1");
+	InitializeUDP(8000);
 }
 
-void LightOn()
-{
-	digitalWrite(LIGHT_PORT, LOW);
-}
-void LightOff()
-{
-	digitalWrite(LIGHT_PORT, HIGH);
-}
+
 void loop() {
 	checkSensorThread_entry(&checkSensorThread);
+	receiveNTPThread_entry(&receiveNTPThread);
 }

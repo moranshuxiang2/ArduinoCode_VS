@@ -23,5 +23,8 @@
     <ClInclude Include="__vm\.ArduinoCode_VS.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Myheader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

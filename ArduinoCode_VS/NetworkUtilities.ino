@@ -1,36 +1,30 @@
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WiFiMulti.h>
-#include <ESP8266HTTPClient.h>
-#include <ESP8266WebServer.h>
-#include <WiFiUdp.h>
 
-typedef std::function<void(void)> THandlerFunction;
+
 
 /******************************************************************************************
-*******************************ÍøÂçÅäÖÃ²ÎÊý£¨²»ÐèÒªÐÞ¸Ä£©**********************************
+*******************************ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Þ¸Ä£ï¿½**********************************
 *******************************************************************************************/
 
 
 
 WiFiUDP udp;
-ESP8266WebServer server(80);//½¨Á¢±¾µØ·þÎñÆ÷
+ESP8266WebServer server(80);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø·ï¿½ï¿½ï¿½ï¿½ï¿½
 ESP8266WiFiMulti WiFiMulti;
 
 //bool ssid_sta_setted = false;
 bool wifiConnected = false;
 
-const int LIGHT_PORT = 16; //pin0 Ö¸Ê¾µÆ:ÓÃÓÚÖ¸Ê¾ÍøÂçµ±Ç°ÍøÂç×´Ì¬
+const int LIGHT_PORT = 16; //pin0 Ö¸Ê¾ï¿½ï¿½:ï¿½ï¿½ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½ï¿½çµ±Ç°ï¿½ï¿½ï¿½ï¿½×´Ì¬
 
-int connectTimeout = 15000; //Á¬½Ó³¬Ê±ÉèÖÃ
+int connectTimeout = 15000; //ï¿½ï¿½ï¿½Ó³ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 
- /******************************ÍøÂçÅäÖÃ²ÎÊý½áÊø*************************************************************/
+ /******************************ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*************************************************************/
 
 
 unsigned long SendAdvUdpMsg(String msg ,int remotePort)
 {
-	IPAddress ad_ip(255, 255, 255, 255); //¹ã²¥µØÖ·
-	//int ad_port = 17924; //¹ã²¥¶Ë¿Ú
+	IPAddress ad_ip(255, 255, 255, 255); //ï¿½ã²¥ï¿½ï¿½Ö·
+	//int ad_port = 17924; //ï¿½ã²¥ï¿½Ë¿ï¿½
     int size = msg.length();
 	char _data[size + 1];
 	msg.toCharArray(_data, size + 1);
@@ -40,7 +34,7 @@ unsigned long SendAdvUdpMsg(String msg ,int remotePort)
 }
 
 
-void StartAP(String ssid, String psd) {
+void StartAP(String ssid, String psd,String ip) {
 	pinMode(LIGHT_PORT, OUTPUT);
 	digitalWrite(LIGHT_PORT, LOW);
 	char _apssid[ssid.length() + 1];
@@ -49,10 +43,8 @@ void StartAP(String ssid, String psd) {
 	psd.toCharArray(_appassword, psd.length() + 1);
 
 	Serial.println("Start create AP ,ssid:" + String(_apssid) + "......");
-	IPAddress ap_local_IP(192, 168, 1, 1);
-	IPAddress ap_gateway(192, 168, 1, 1);
 	IPAddress ap_subnet(255, 255, 255, 0);
-	WiFi.softAPConfig(ap_local_IP, ap_gateway, ap_subnet);
+	WiFi.softAPConfig(CovertIpStrToIPAddress(ip), CovertIpStrToIPAddress(ip), ap_subnet);
 	delay(1000);
 	WiFi.softAP(_apssid, _appassword);
 	IPAddress myIP = WiFi.softAPIP();
@@ -82,7 +74,7 @@ void HandleClient() {
 void AddHttpRequestHandler(const char* uri, HTTPMethod method, THandlerFunction fn) {
 	server.on(uri, method, fn);
 }
-String  ReadNTPpacket()
+String  ReadUDPMsg()
 {
 	String _msg = "";
 	int cb = udp.parsePacket();
@@ -120,27 +112,27 @@ IPAddress CovertIpStrToIPAddress(String ip)
 
 }
 
-unsigned long SendUDPString(String ip, int remotePort, String data)
-{
 
+void InitializeUDP(int localport)
+{
+	udp.begin(localport);
+}
+void  SendUDPString(String ip, int remotePort, String data)
+{
 	int _length = data.length();
 	char _value[_length];
 	data.toCharArray(_value, _length);
 	udp.beginPacket(CovertIpStrToIPAddress(ip), remotePort);
 	udp.write(_value, _length);
 	udp.endPacket();
-	return 1;
 }
 
-unsigned long SendUDPBytes(String ip,int remotePort, char* data, int _length)
+void  SendUDPBytes(String ip,int remotePort, char* data, int _length)
 {
 	udp.beginPacket(CovertIpStrToIPAddress(ip), remotePort);
 	udp.write(data, _length);
 	udp.endPacket();
 }
-
-
-
 
 void receiveTip()
 {
@@ -171,7 +163,7 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 {
 	Serial.println();
 
-	char _ssid[ssid.length() + 1]; //×¢ÒâcharÒª±ÈString ¶àÒ»Î» ²ÅÐÐ£¬´ú±í½áÊø·û¡£
+	char _ssid[ssid.length() + 1]; //×¢ï¿½ï¿½charÒªï¿½ï¿½String ï¿½ï¿½Ò»Î» ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	char _psd[psd.length() + 1];
 
 	ssid.toCharArray(_ssid, ssid.length() + 1);
@@ -191,7 +183,7 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 
 	delay(1000);
 
-	Serial.println("³¢ÊÔÁ¬½ÓÄ¿±êWiFi  " + String(_ssid) + "...");
+	Serial.println("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½WiFi  " + String(_ssid) + "...");
 	int count = 0;
 	while (WiFiMulti.run() != WL_CONNECTED)
 	{
@@ -199,10 +191,10 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 
 		Serial.print(".");
 		count++;
-		if (count * 500 == connectTimeout) //³¬¹ýTimeoutÈÏÎªÃ»Á¬½ÓÉÏ£¬Ôò·µ»ØÁ¬½ÓÊ§°Ü
+		if (count * 500 == connectTimeout) //ï¿½ï¿½ï¿½ï¿½Timeoutï¿½ï¿½ÎªÃ»ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ò·µ»ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
 		{
 			Serial.println();
-			Serial.println("Á¬½Ó" + String(_ssid) + "Ê§°Ü£¡ÇëÈ·ÈÏÄ¿±êWiFi³É¹¦¿ªÆô£¡");
+			Serial.println("ï¿½ï¿½ï¿½ï¿½" + String(_ssid) + "Ê§ï¿½Ü£ï¿½ï¿½ï¿½È·ï¿½ï¿½Ä¿ï¿½ï¿½WiFiï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 			return false;
 		}
 	}
@@ -210,14 +202,14 @@ bool TryConnectWiFi(String ssid,String psd,String _thirdOctet,String _fourthOcte
 	{
 		WiFi.disconnect();
 		Serial.println();
-		Serial.println("Á¬½Ó" + String(ssid) + "Ê§°Ü£¡ÇëÈ·ÈÏÄ¿±êWiFi³É¹¦¿ªÆô£¡");
+		Serial.println("ï¿½ï¿½ï¿½ï¿½" + String(ssid) + "Ê§ï¿½Ü£ï¿½ï¿½ï¿½È·ï¿½ï¿½Ä¿ï¿½ï¿½WiFiï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
 
 	digitalWrite(LIGHT_PORT, HIGH);
 
 	Serial.println();
-	Serial.println("³É¹¦Á¬½ÓÄ¿±êWiFi:" + WiFi.SSID());
+	Serial.println("ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½WiFi:" + WiFi.SSID());
 	Serial.print("Local IP:");
 
 	Serial.println(WiFi.localIP());
