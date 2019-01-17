@@ -16,6 +16,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ArduinoCode_VS.ino" />
+    <None Include="NetworkUtilities.ino" />
   </ItemGroup>
- 
+  <ItemGroup>
+    <ClInclude Include="__vm\.ArduinoCode_VS.vsarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
