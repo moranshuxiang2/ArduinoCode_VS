@@ -171,6 +171,7 @@ void CloseGlassPort()
 void InitializeWeb() {
 	DEBUG_SERIAL.println();
 	StartAP("xr-lab", "66666666", "192.168.1.1");
+	//TryConnectWiFi("liuguo_home", "7777788888", "1", "200");
 	BeginUDP(8000);
 }
 

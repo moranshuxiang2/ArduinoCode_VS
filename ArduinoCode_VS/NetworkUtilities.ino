@@ -155,6 +155,8 @@ void lightTwinkle()
 
 bool TryConnectWiFi(String ssid, String psd, String _thirdOctet, String _fourthOctet)
 {
+	CloseAP();//remember to close ap which build before!
+
 	Serial.println();
 
 	char _ssid[ssid.length() + 1]; //leave one to terminal
