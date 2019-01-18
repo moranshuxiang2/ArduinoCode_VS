@@ -6,7 +6,7 @@
 /***************************************************
 CurrentVersion:V1.0   Time:	2019/1/17/周四 17:20:40
 Content:http,udp
-    
+
 ****************************************************/
 
 /*NOTE:如何防止WDT复位
@@ -52,7 +52,7 @@ static struct pt_sem sem_LED;
 /***************其他设置*********************/
 boolean sensor_close;
 boolean sensor_handle;
-
+boolean glassClosed = true;
 const int remotePort = 17942;
 bool isInitialized = false; //初始化
 /*******************************************/
@@ -76,6 +76,8 @@ void InitializeIO()
 {
 	pinMode(CLOSE_GLASS_INPUT_PORT, INPUT_PULLUP);
 	pinMode(D00R_HANDLE_INPUT_PORT, INPUT);
+	pinMode(CLOSE_GLASS_OUTPUT_PORT, OUTPUT);
+	digitalWrite(CLOSE_GLASS_OUTPUT_PORT, HIGH);
 }
 
 static int receiveNTPThread_entry(struct pt *pt)
@@ -135,14 +137,40 @@ void CheckSensorState()
 	String  close = sensor_close ? "1" : "0";
 	String  handle = sensor_handle ? "1" : "0";
 	msg = "close:" + close + "," + "door:" + handle;
-	SendAdvUdpMsg(msg, remotePort);
+	String _msg = close + "," + handle;
+
+	SendAdvUdpMsg(_msg, remotePort);
+
+	if (sensor_close == false)
+		CloseGlassPort();
+	else
+		OpenGlassPort();
+
+
 	DEBUG_SERIAL.println(msg);
 }
 
+void OpenGlassPort()
+{
+	if (glassClosed == false)
+		return;
+
+	glassClosed = false;
+	digitalWrite(CLOSE_GLASS_OUTPUT_PORT, HIGH);
+}
+
+void CloseGlassPort()
+{
+	if (glassClosed == true)
+		return;
+
+	glassClosed = true;
+	digitalWrite(CLOSE_GLASS_OUTPUT_PORT, LOW);
+}
 
 void InitializeWeb() {
 	DEBUG_SERIAL.println();
-	StartAP("xr-lab","66666666","192.168.1.1");
+	StartAP("xr-lab", "66666666", "192.168.1.1");
 	BeginUDP(8000);
 }
 
